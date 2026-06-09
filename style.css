@@ -1,0 +1,18 @@
+h1 {
+  font-family: Palatino;
+}
+
+#text-to-read {
+  font-family: Palatino;
+  white-space: pre-wrap;
+}
+
+#animation-button {
+  min-width: 105px;
+}
+
+input:disabled {
+  background-color: #f0f0f0;
+  color: #a1a1a1;
+  cursor: not-allowed;
+}
