@@ -1,5 +1,26 @@
+body {
+  background-color: seashell;
+}
+
 h1 {
   font-family: Palatino;
+}
+
+button {
+  max-height: 21.5px;
+}
+
+button:disabled {
+  color: gray !important;
+}
+
+#start-button {
+  color: red;
+  min-width: 105px;
+}
+
+#unburn-button {
+  min-width: 130px;
 }
 
 #text-to-read {
@@ -9,6 +30,10 @@ h1 {
 
 #animation-button {
   min-width: 105px;
+}
+
+#text-input {
+  width: stretch;
 }
 
 input:disabled {

@@ -1,4 +1,3 @@
-
 /* Local Storage Keys */
 const TEXT_STATE = 'textState';
 const WPM = 'wpm';
@@ -6,6 +5,10 @@ const WPM = 'wpm';
 /* Defaults */
 const WPM_DEFAULT = 200;
 
+/* Shared State */
+let burning = false;
+
+/* Helper Functions */
 function getWpm() {
   return localStorage.getItem(WPM).trim()
     ? localStorage.getItem(WPM)
@@ -16,44 +19,90 @@ function calcDelaySecondsFromWpm(wpm) {
   return 60 / wpm;
 }
 
-/* Helper Functions */
-function applyAnimationToWords(p, wpm) {
-  const words = p.querySelectorAll('.word');
-  const animations = []
-  words.forEach((word, index) => {
-    const initialColor = 'black';
-    const initialOpacity = 1;
-    word.style.color = initialColor;
-    word.style.opacity = initialOpacity;
+function applyAnimationToWords(p, startIndex = 0) {
+  const wpm = getWpm();
+  const words = Array.from(p.querySelectorAll('.word'));
+  const animations = [];
+
+  const slicedWords = words.slice(startIndex);
+  slicedWords.forEach((word, index) => {
+    // remove old animation
+    word.getAnimations().forEach(animation => animation.cancel());
+
+    // add new animation
     const animation = word.animate(
       [
-        { opacity: initialOpacity, color: initialColor },
-        { opacity: 0, color: 'red' },
+        { opacity: 1, color: 'black' },
+        { opacity: 0.5, color: 'red' },
+        { opacity: 0, color: 'yellow' },
       ],
       {
-        duration: 0.6 * 1000,
+        id: word.id,
+        duration: 1.8 * 1000,
         easing: 'ease-in',
         delay: calcDelaySecondsFromWpm(wpm) * (index + 1) * 1000,
         fill: 'forwards',
       },
     );
     animation.pause();
-    if (index === words.length - 1) {
+    if (index === slicedWords.length - 1) {
       animation.addEventListener('finish', () => {
-        const button = document.querySelector('#animation-button');
-        button.textContent = 'Reset';
-        button.style.color = 'green';
+        const startButton = document.querySelector('#start-button');
+        startButton.disabled = true;
       });
     }
     animations.push(animation);
   });
+  if (animations.length > 0) {
+    const startButton = document.querySelector('#start-button');
+    startButton.disabled = false;
+  }
   return animations;
 }
 
-function splitAndAddWords(paragraph, text) {
+function restoreWords(num) {
+  // reset the last num animations that haven't completely finished
+  const p = document.querySelector('#text-to-read');
+  const animations = p.getAnimations({ subtree: true });
+
+  if (animations.length === 0) return;
+
+  // pause the animations
+  animations.forEach((animation) => {
+    if (animation.overallProgress === 1) {
+      animation.pause();
+    }
+  });
+
+  // find the last animation that has finished
+  const nextAnimationToStart = animations.findLast(
+    (animation) => animation.overallProgress === 1,
+  );
+
+  // handle the case where none of the animations have finished
+  const animationIndex = nextAnimationToStart?.id.split('-')[1] ?? 0;
+  const startIndex = animationIndex - num;
+  // handle negative startIndex values
+  const normalizedStartIndex = startIndex < 0 ? 0 : startIndex;
+  // starting from the nth previous animation, reapply the animations
+  const newAnimations = applyAnimationToWords(p, normalizedStartIndex);
+
+  // play the animations if they were playing before
+  newAnimations.forEach((animation) => {
+    if (animation.overallProgress !== 1) {
+      burning ? animation.play() : animation.pause();
+    }
+  });
+
+}
+
+function splitAndAddWords(text) {
+  const paragraph = document.querySelector('#text-to-read')
   const words = text.split(' ');
 
   const newWords = [];
+
+  let wordIndex = 0;
 
   words.forEach((word, index) => {
     // handle newLine characters
@@ -63,6 +112,8 @@ function splitAndAddWords(paragraph, text) {
         const wordSpan = document.createElement('span');
         wordSpan.textContent = splitWord;
         wordSpan.classList.add('word');
+        wordSpan.id = `word-${wordIndex}`;
+        wordIndex++;
         newWords.push(wordSpan);
       }
       // add a newLine between each word that originally had newLines between them
@@ -80,14 +131,21 @@ function splitAndAddWords(paragraph, text) {
   paragraph.replaceChildren(...newWords);
 }
 
-/* COMPONENTS */
-function createTextAreaInput(article) {
-  const textAreaInput = document.createElement('textarea');
+function resetParagraph() {
+  const paragraph = document.querySelector('#text-to-read');
+  // cancel existing animations to remove old event listeners from running after reset
+  const animations = paragraph.getAnimations({subtree: true});
+  animations.forEach((animation) => animation.cancel());
 
-  textAreaInput.id = 'text-input';
-  textAreaInput.name = 'text-input';
-  textAreaInput.rows = '10';
-  textAreaInput.cols = '50';
+  paragraph.replaceChildren();
+  splitAndAddWords(localStorage.getItem(TEXT_STATE));
+  applyAnimationToWords(paragraph);
+  burning = false;
+}
+
+/* COMPONENTS */
+function initializeTextAreaInput() {
+  const textAreaInput = document.querySelector('#text-input');
 
   const initialText = localStorage.getItem(TEXT_STATE);
   textAreaInput.value = initialText;
@@ -98,110 +156,111 @@ function createTextAreaInput(article) {
 
     localStorage.setItem(TEXT_STATE, inputValue);
 
-    const p = article.querySelector('p');
-    splitAndAddWords(p, inputValue);
+    splitAndAddWords(inputValue);
   });
 
   return textAreaInput;
 }
 
-function createArticle() {
-  const article = document.createElement('article');
-
-  article.id = 'article-of-text';
-
-  const paragraph = document.createElement('p');
-  paragraph.id = 'text-to-read';
-
+function initializeArticle() {
   // wrap each word in a span
-  splitAndAddWords(paragraph, localStorage.getItem(TEXT_STATE));
-
-  article.append(paragraph);
-
-  return article;
+  splitAndAddWords(localStorage.getItem(TEXT_STATE));
 }
 
-function resetParagraph() {
-  const paragraph = document.querySelector('#text-to-read');
-  paragraph.replaceChildren();
-  splitAndAddWords(paragraph, localStorage.getItem(TEXT_STATE));
+function toggleBurning(wasBurning) {
+  const p = document.querySelector('#text-to-read');
+  let animations = p.getAnimations({ subtree: true });
+  const wpmInput = document.querySelector('#wpm-input');
+
+  if (!wasBurning && animations.length === 0) {
+    animations = applyAnimationToWords(p);
+  }
+
+  animations.forEach((animation) => {
+    if (animation.overallProgress !== 1) {
+      wasBurning ? animation.pause() : animation.play();
+    }
+  });
+  wpmInput.disabled = !wasBurning;
+  burning = !wasBurning;
 }
 
-function createControlsButton() {
-  const button = document.createElement('button');
-  button.id = 'animation-button';
+function initializeStartButton() {
+  const button = document.querySelector('#start-button');
   button.textContent = 'Start Burning';
-  button.style.color = 'red';
   button.addEventListener('click', () => {
     const p = document.querySelector('#text-to-read');
     let animations = p.getAnimations({ subtree: true });
     const wpmInput = document.querySelector('#wpm-input');
-    if (button.textContent === 'Start Burning') {
+
+    if (burning === false) {
       button.textContent = 'Pause Burning';
       button.style.color = 'blue';
-      const wpm = getWpm();
-      if (animations.length === 0) {
-        animations = applyAnimationToWords(p, wpm);
-      }
-      animations.forEach((animation) => {
-        if (animation.overallProgress !== 1) {
-          animation.play();
-        }
-      });
-      wpmInput.disabled = true;
-    } else if (button.textContent === 'Pause Burning') {
-      button.textContent = 'Start Burning';
-      button.style.color = 'red';
-      animations.forEach((animation) => {
-        if (animation.overallProgress !== 1) {
-          animation.pause();
-        }
-      });
-      wpmInput.disabled = true;
     } else {
-      resetParagraph();
       button.textContent = 'Start Burning';
       button.style.color = 'red';
-      wpmInput.disabled = false;
     }
+    toggleBurning(burning);
   });
 
   return button;
 }
 
-function createWpmInput() {
-  const span = document.createElement('span');
-  const title = document.createTextNode(' Words per minute: ');
-  const wpmInput = document.createElement('input');
-  wpmInput.id = 'wpm-input';
-  wpmInput.type = 'number';
+function initializeUnburnButton() {
+  const numWords = 10;
+  const button = document.querySelector('#unburn-button');
+  button.textContent = `Restore ${numWords} words`;
+  button.style.color = 'green';
+  button.addEventListener('click', () => restoreWords(numWords));
+  return button;
+}
+
+function initializeResetButton() {
+  const button = document.querySelector('#reset-button');
+  button.textContent = 'Reset Burn';
+  button.style.color = 'green';
+  button.style.minWidth = '85px';
+  button.addEventListener('click', () => {
+    const wpmInput = document.querySelector('#wpm-input');
+    const startButton = document.querySelector('#start-button');
+
+    startButton.textContent = 'Start Burning';
+    startButton.style.color = 'red';
+    startButton.disabled = false;
+    resetParagraph();
+    wpmInput.disabled = false;
+  });
+}
+
+function initializeWpmInput() {
+  const wpmInput = document.querySelector('#wpm-input');
   wpmInput.style.maxWidth = '50px';
   wpmInput.value = getWpm();
   wpmInput.addEventListener('change', (event) => {
     const wpm = event.target.value;
     localStorage.setItem('wpm', wpm);
   });
-  span.append(title);
-  span.append(wpmInput);
-  return span;
 }
 
-function createControlsSection() {
-  const section = document.createElement('section');
-  const controlsButton = createControlsButton();
-  const wpmInput = createWpmInput();
-  section.append(controlsButton);
-  section.append(wpmInput);
-  return section;
+function initializeControlsSection() {
+  const section = document.querySelector('#controls-section');
+  const leftControls = document.querySelector('#left-controls');
+  const startButton = initializeStartButton();
+  const unburnButton = initializeUnburnButton();
+  const wpmInput = initializeWpmInput();
+  const resetButton = initializeResetButton();
+
+  section.style.display = 'flex';
+  section.style.justifyContent = 'space-between';
+  section.style.gap = '4px';
+
+  leftControls.style.display = 'flex';
+  leftControls.style.gap = '4px';
 }
 
 /* RENDERING LOGIC */
 document.addEventListener('DOMContentLoaded', () => {
-  const article = createArticle();
-  const textAreaInput = createTextAreaInput(article);
-  const controlsSection = createControlsSection();
-
-  document.body.append(textAreaInput);
-  document.body.append(controlsSection);
-  document.body.append(article);
+  initializeArticle();
+  initializeTextAreaInput();
+  initializeControlsSection();
 });
