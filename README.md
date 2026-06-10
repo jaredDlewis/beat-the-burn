@@ -1,3 +1,17 @@
+# Beat the Burn
+This is a small coding exercise for the prompt "Burn after reading."
+
+### Goals
+- Write code by hand (no AI generated code)
+- Learn something new (Web Animations API)
+- Avoid frameworks (vanilla DOM manipulation)
+
+### Codebase priorities
+- Prioritize adding features over implementing tests or spreading code out amongst modules
+- Still keep the code relatively organized
+
+### Functionality to build
+
 MVP:
 - [x] render an input for a user to paste a large block of code
 - [x] display the text below
@@ -12,6 +26,6 @@ Stretch:
 - [x] there is a "Add [n] words back" button that allows the user to add text back if needed
 - [x] store text in localStorage for persistent state
 - [x] the textarea should expand with the width of the page
-- [ ] enable changing wpm for remaining text while paused
+- [ ] enable changing wpm for remaining text while burning is paused
+- [ ] the controls section should stick to the top of the page when scrolling lower would make it disappear
 - [ ] make the "burning" look more realistic
-- [ ] the pause button shoud stick to the top of the page when scrolling would make it disappear
