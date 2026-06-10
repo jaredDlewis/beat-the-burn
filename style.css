@@ -1,9 +1,7 @@
+/* Tags */
+
 body {
   background-color: seashell;
-}
-
-h1 {
-  font-family: Palatino;
 }
 
 button {
@@ -14,21 +12,40 @@ button:disabled {
   color: gray !important;
 }
 
-#start-button {
-  color: red;
+h1 {
+  font-family: Palatino;
+}
+
+input:disabled {
+  background-color: #f0f0f0;
+  color: #a1a1a1;
+  cursor: not-allowed;
+}
+
+/* Ids */
+
+#animation-button {
   min-width: 105px;
 }
 
-#unburn-button {
-  min-width: 130px;
+#controls-section {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
 }
 
-#text-to-read {
-  font-family: Palatino;
-  white-space: pre-wrap;
+#left-controls {
+  display: flex;
+  gap: 4px;
 }
 
-#animation-button {
+#reset-button {
+  color: black;
+  min-width: 85px;
+}
+
+#start-button {
+  color: red;
   min-width: 105px;
 }
 
@@ -36,8 +53,16 @@ button:disabled {
   width: stretch;
 }
 
-input:disabled {
-  background-color: #f0f0f0;
-  color: #a1a1a1;
-  cursor: not-allowed;
+#text-to-read {
+  font-family: Palatino;
+  white-space: pre-wrap;
+}
+
+#unburn-button {
+  min-width: 130px;
+  color: green;
+}
+
+#wpm-input {
+  max-width: 50px;
 }

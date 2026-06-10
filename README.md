@@ -12,5 +12,6 @@ Stretch:
 - [x] there is a "Add [n] words back" button that allows the user to add text back if needed
 - [x] store text in localStorage for persistent state
 - [x] the textarea should expand with the width of the page
+- [ ] enable changing wpm for remaining text while paused
 - [ ] make the "burning" look more realistic
 - [ ] the pause button shoud stick to the top of the page when scrolling would make it disappear
