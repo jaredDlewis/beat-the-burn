@@ -1,14 +1,20 @@
 /* Local Storage Keys */
+
 const TEXT_STATE = 'textState';
 const WPM = 'wpm';
 
-/* Defaults */
+/* Constants */
+
 const WPM_DEFAULT = 200;
+const NUM_WORDS_UNBURN = 10;
+const ANIMATION_DURATION = 1.8 * 1000;
 
 /* Shared State */
+
 let burning = false;
 
 /* Manage Local Storage */
+
 function initializeLocalStorage() {
   if (!localStorage.getItem(TEXT_STATE)) {
     localStorage.setItem(TEXT_STATE, '');
@@ -19,15 +25,13 @@ function initializeLocalStorage() {
 }
 
 function getWpm() {
-  return localStorage.getItem(WPM).trim()
-    ? localStorage.getItem(WPM)
-    : WPM_DEFAULT;
+  const storedWpm = localStorage.getItem(WPM);
+  return storedWpm ? storedWpm : WPM_DEFAULT;
 }
 
 function getTextState() {
-  return localStorage.getItem(TEXT_STATE)
-    ? localStorage.getItem(TEXT_STATE)
-    : '';
+  const storedText = localStorage.getItem(TEXT_STATE);
+  return storedText ? storedText : '';
 }
 
 /* Article of Text to Read */
@@ -89,8 +93,7 @@ function applyAnimationToWords(p, startIndex = 0, playNewAnimations = false) {
         { opacity: 0, color: 'yellow' },
       ],
       {
-        id: word.id,
-        duration: 1.8 * 1000,
+        duration: ANIMATION_DURATION,
         easing: 'ease-in',
         delay: calcDelaySecondsFromWpm(wpm) * (index + 1) * 1000,
         fill: 'forwards',
@@ -142,12 +145,13 @@ function restoreWords(num) {
   });
 
   // find the last animation that has finished
-  const nextAnimationToStart = animations.findLast(
+  const nextAnimationIndexToStart = animations.findLastIndex(
     (animation) => animation.overallProgress === 1,
   );
 
   // handle the case where none of the animations have finished
-  const animationIndex = nextAnimationToStart?.id.split('-')[1] ?? 0;
+  const animationIndex =
+    nextAnimationIndexToStart === -1 ? 0 : nextAnimationIndexToStart;
   const startIndex = animationIndex - num;
   // handle negative startIndex values
   const normalizedStartIndex = startIndex < 0 ? 0 : startIndex;
@@ -156,10 +160,9 @@ function restoreWords(num) {
 }
 
 function initializeUnburnButton() {
-  const numWords = 10;
   const button = document.querySelector('#unburn-button');
-  button.textContent = `Restore ${numWords} words`;
-  button.addEventListener('click', () => restoreWords(numWords));
+  button.textContent = `Restore ${NUM_WORDS_UNBURN} words`;
+  button.addEventListener('click', () => restoreWords(NUM_WORDS_UNBURN));
 }
 
 /* Text Area Input */
@@ -236,7 +239,7 @@ function initializeWpmInput() {
   const wpmInput = resetWpmInput();
   wpmInput.addEventListener('change', (event) => {
     const wpm = event.target.value;
-    localStorage.setItem('wpm', wpm);
+    localStorage.setItem(WPM, wpm);
   });
 }
 
@@ -253,20 +256,18 @@ function initializeResetButton() {
   button.addEventListener('click', resetTextAndBurnBehavior);
 }
 
-/* Controls Section */
-
-function initializeControlsSection() {
-  initializeStartButton();
-  initializeUnburnButton();
-  initializeWpmInput();
-  initializeResetButton();
-}
-
 /* Initialization Logic */
 
 document.addEventListener('DOMContentLoaded', () => {
   initializeLocalStorage();
+
   initializeArticle();
+
   initializeTextAreaInput();
-  initializeControlsSection();
+
+  // Controls section
+  initializeStartButton();
+  initializeUnburnButton();
+  initializeWpmInput();
+  initializeResetButton();
 });

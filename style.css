@@ -24,10 +24,6 @@ input:disabled {
 
 /* Ids */
 
-#animation-button {
-  min-width: 105px;
-}
-
 #controls-section {
   display: flex;
   justify-content: space-between;
