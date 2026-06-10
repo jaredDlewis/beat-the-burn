@@ -77,6 +77,7 @@ function calcDelaySecondsFromWpm(wpm) {
 
 function applyAnimationToWords(p, startIndex = 0, playNewAnimations = false) {
   const wpm = getWpm();
+  const delaySeconds = calcDelaySecondsFromWpm(wpm);
   const words = Array.from(p.querySelectorAll('.word'));
   const animations = [];
 
@@ -94,11 +95,14 @@ function applyAnimationToWords(p, startIndex = 0, playNewAnimations = false) {
       ],
       {
         duration: ANIMATION_DURATION,
-        easing: 'ease-in',
-        delay: calcDelaySecondsFromWpm(wpm) * (index + 1) * 1000,
+        easing: 'ease-out',
+        delay: delaySeconds * (index + 1) * 1000,
         fill: 'forwards',
       },
     );
+    // store the wpm so that if the wpm input value changes, we can adjust the animation speed accordingly
+    animation.originalWpm = wpm;
+
     if (!playNewAnimations) {
       animation.pause();
     }
@@ -204,7 +208,13 @@ function initializeStartButton() {
       animations = applyAnimationToWords(p);
     }
 
+    // check if wpm has changed and adjust the playback rate if needed
+    const wpmInputValue = getWpm();
+
     animations.forEach((animation) => {
+      if (wpmInputValue !== animation.originalWpm) {
+        animation.playbackRate = wpmInputValue / animation.originalWpm;
+      }
       if (animation.overallProgress !== 1) {
         wasBurning ? animation.pause() : animation.play();
       }
@@ -237,7 +247,7 @@ function resetWpmInput() {
 
 function initializeWpmInput() {
   const wpmInput = resetWpmInput();
-  wpmInput.addEventListener('change', (event) => {
+  wpmInput.addEventListener('input', (event) => {
     const wpm = event.target.value;
     localStorage.setItem(WPM, wpm);
   });
