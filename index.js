@@ -256,18 +256,20 @@ function initializeResetButton() {
   button.addEventListener('click', resetTextAndBurnBehavior);
 }
 
-/* Initialization Logic */
+/* Controls Section */
 
-document.addEventListener('DOMContentLoaded', () => {
-  initializeLocalStorage();
-
-  initializeArticle();
-
-  initializeTextAreaInput();
-
-  // Controls section
+function initializeControlsSection() {
   initializeStartButton();
   initializeUnburnButton();
   initializeWpmInput();
   initializeResetButton();
+}
+
+/* Initialization Logic */
+
+document.addEventListener('DOMContentLoaded', () => {
+  initializeLocalStorage();
+  initializeArticle();
+  initializeTextAreaInput();
+  initializeControlsSection();
 });
