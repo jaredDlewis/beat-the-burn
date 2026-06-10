@@ -78,6 +78,7 @@ function calcDelaySecondsFromWpm(wpm) {
 function applyAnimationToWords(p, startIndex = 0, playNewAnimations = false) {
   const wpm = getWpm();
   const delaySeconds = calcDelaySecondsFromWpm(wpm);
+  console.log('delaySeconds', delaySeconds);
   const words = Array.from(p.querySelectorAll('.word'));
   const animations = [];
 
@@ -100,8 +101,6 @@ function applyAnimationToWords(p, startIndex = 0, playNewAnimations = false) {
         fill: 'forwards',
       },
     );
-    // store the wpm so that if the wpm input value changes, we can adjust the animation speed accordingly
-    animation.originalWpm = wpm;
 
     if (!playNewAnimations) {
       animation.pause();
@@ -129,7 +128,7 @@ function initializeArticle() {
 
   paragraph.replaceChildren();
   splitAndAddWords(getTextState());
-  applyAnimationToWords(paragraph);
+  // applyAnimationToWords(paragraph);
 }
 
 /* Unburn (Restore N Words) Button */
@@ -208,18 +207,13 @@ function initializeStartButton() {
       animations = applyAnimationToWords(p);
     }
 
-    // check if wpm has changed and adjust the playback rate if needed
-    const wpmInputValue = getWpm();
-
     animations.forEach((animation) => {
-      if (wpmInputValue !== animation.originalWpm) {
-        animation.playbackRate = wpmInputValue / animation.originalWpm;
-      }
       if (animation.overallProgress !== 1) {
         wasBurning ? animation.pause() : animation.play();
       }
     });
-    wpmInput.disabled = !wasBurning;
+
+    wpmInput.disabled = true;
     burning = !wasBurning;
   }
 
@@ -258,6 +252,7 @@ function initializeWpmInput() {
 function resetTextAndBurnBehavior() {
   resetStartButton();
   initializeArticle();
+  resetWpmInput();
 }
 
 function initializeResetButton() {
