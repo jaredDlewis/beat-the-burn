@@ -7,7 +7,7 @@ This is a small coding exercise for the prompt "Burn after reading."
 - Avoid frameworks (vanilla DOM manipulation)
 
 ### Codebase priorities
-- Prioritize adding features over implementing tests or spreading code out amongst modules
+- Prioritize adding features over implementing tests or spreading code out among modules
 - Still keep the code relatively organized
 
 ### Functionality to build
